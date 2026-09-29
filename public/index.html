@@ -1,12 +1,9 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Melody — A Symphony in Every Scent</title><!--SEO--><style>#colsec{display:none}body.col #colsec{display:block}body.col .hero,body.col #promo,body.col #shop,body.col .vid,body.col #about{display:none}#colhead{text-align:center;margin-bottom:26px}#colhead a{color:var(--gold)}</style><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
-<header><a class="logo" href="/" style="text-decoration:none">MELODY</a><nav><a href="/">Home</a><a href="/#shop">Shop</a><a href="/collections">Collections</a><a href="/#about">About</a><a href="#contact">Contact</a></nav><button onclick="openCart()">🛍 Cart (<span id="cc">0</span>)</button></header>
-<div id="top"></div><section class="hero" style="padding:0"><div><p class="eyebrow">A SYMPHONY IN EVERY SCENT</p><h1 id="ht"></h1><p id="hd"></p><br><a class="btn" href="/#shop">Shop Now</a> <a class="btn ghost" style="color:#fff" href="/collections">Explore Collection</a></div></section>
-<div id="promo" style="margin-top:-40px;position:relative"></div>
-<section id="shop"><h2>Our Fragrances</h2><div class="tabs" id="tabs"></div><div style="display:flex;gap:10px;flex-wrap:wrap;max-width:900px;margin:0 auto 26px"><input id="q" placeholder="🔍 Search scent, notes…" oninput="draw()" style="flex:2"><select id="so" onchange="draw()" style="flex:1"><option value="">Featured</option><option value="new">Newest</option><option value="lo">Price: low → high</option><option value="hi">Price: high → low</option></select><label style="align-self:center"><input type="checkbox" id="st" onchange="draw()" style="width:auto"> In stock</label></div><div class="grid" id="grid"></div></section>
-<section id="colsec"><div id="colhead"></div><div class="grid" id="colgrid"></div></section>
-<section class="vid" id="vidsec"></section>
-<section id="about"><h2>Our Story</h2><p style="text-align:center;max-width:700px;margin:auto" id="ab"></p><div class="mv"><div><h3>Mission</h3><p id="ms"></p></div><div><h3>Vision</h3><p id="vs"></p></div></div></section>
-<footer id="contact"><span class="logo">MELODY</span><p>A Symphony in Every Scent</p><p id="ct"></p><p>💳 COD · bKash · Nagad · Rocket · Bank Transfer</p></footer>
-<div class="drawer" id="drawer"><div style="flex:1" onclick="closeAll()"></div><div class="panel" id="cartp"></div></div>
-<div class="modal" id="modal"><div class="panel" id="modalp"></div></div><script src="/app.js"></script></body></html>
+<title>Melody — A Symphony in Every Scent</title><!--SEO--><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@400;500&display=swap"><link rel="stylesheet" href="/style.css"></head><body>
+<div class="bar" id="bar"></div>
+<header><div class="w hd"><a href="/" id="lg" class="lt">Melody</a><button class="ham" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')">☰</button>
+<nav class="nav" onclick="this.classList.remove('open')"><a href="/">Home</a><a href="/shop">Shop</a><a href="/collections">Collections</a><a href="/about">About Us</a><a href="/contact">Contact</a></nav>
+<div class="ic"><a href="/shop?focus=1" title="Search">⌕</a><a href="/shop?wish=1" title="Wishlist">♡</a><a href="/cart" title="Cart">🛍<b id="cc"></b></a></div></div></header>
+<main id="app"></main>
+<footer><div class="w"><div class="fg" id="ft"></div></div></footer>
+<script src="/app.js"></script></body></html>

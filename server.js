@@ -22,12 +22,14 @@ app.get('/p/:slug',h(async(req,res)=>{const p=(await q(PQ+' where p.active and p
  if(!p)return page(req,res,{status:404,title:'Product not found — Melody'});
  const b=B(req),pr=await promoNow(pool),pc=pr&&(p.premium||!pr.premium_only)?pr.discount_pct:0,url=b+req.path;
  page(req,res,{title:p.name+' — Melody',desc:[p.short_desc,p.notes&&'Notes: '+p.notes].filter(Boolean).join(' · ')||D,image:p.image_url,ld:{'@context':'https://schema.org','@type':'Product',name:p.name,description:p.short_desc||p.name,brand:{'@type':'Brand',name:'Melody'},image:p.image_url?new URL(p.image_url,b).href:undefined,url,
-  offers:p.variants.length?{'@type':'Offer',priceCurrency:'BDT',price:Math.min(...p.variants.map(v=>v.price-Math.round(v.price*pc/100))),url,availability:p.variants.some(v=>v.stock>0)?'https://schema.org/InStock':'https://schema.org/OutOfStock'}:undefined,
+  offers:p.variants.length?{'@type':'Offer',priceCurrency:'BDT',price:Math.min(...p.variants.map(v=>Math.min(v.sale>0?v.sale:v.price,v.price-Math.round(v.price*pc/100)))),url,availability:p.variants.some(v=>v.stock>0)?'https://schema.org/InStock':'https://schema.org/OutOfStock'}:undefined,
   aggregateRating:p.rcount?{'@type':'AggregateRating',ratingValue:p.rating,reviewCount:p.rcount}:undefined}})}));
+const PG={'/shop':'Shop','/cart':'Your cart','/checkout':'Checkout','/about':'About Us','/contact':'Contact','/order':'Order confirmed'};
+app.get(Object.keys(PG),(req,res)=>page(req,res,{title:PG[req.path]+' — Melody'}));
 app.get('/collections',(req,res)=>page(req,res,{title:'Collections — Melody',desc:'Explore Melody fragrance collections for men, women and unisex.'}));
 app.get('/collections/:k',(req,res)=>CT[req.params.k]?page(req,res,{title:CT[req.params.k]+' Collection — Melody',desc:'Shop the Melody '+CT[req.params.k]+' fragrance collection. Delivery across Bangladesh.'}):page(req,res,{status:404,title:'Collection not found — Melody'}));
 app.get('/robots.txt',(req,res)=>res.type('text').send(`User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /api/admin\nSitemap: ${B(req)}/sitemap.xml\n`));
-app.get('/sitemap.xml',h(async(req,res)=>{const b=B(req),ps=await q('select slug from products where active and slug is not null order by id'),u=['/','/collections',...Object.keys(CT).filter(k=>k!='on-sale').map(k=>'/collections/'+k),...ps.map(p=>'/p/'+p.slug)];
+app.get('/sitemap.xml',h(async(req,res)=>{const b=B(req),ps=await q('select slug from products where active and slug is not null order by id'),u=['/','/shop','/about','/contact','/collections',...Object.keys(CT).filter(k=>k!='on-sale').map(k=>'/collections/'+k),...ps.map(p=>'/p/'+p.slug)];
  res.type('xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${u.map(x=>`<url><loc>${esc(b+x)}</loc></url>`).join('')}</urlset>`)}));
 app.use('/uploads',express.static(UP,{maxAge:'30d',immutable:true}));app.use(express.static(PUB,{maxAge:'1h'}));
 const up=multer({storage:multer.diskStorage({destination:UP,filename:(_,f,cb)=>cb(null,Date.now()+path.extname(f.originalname))}),limits:{fileSize:300e6}});
@@ -39,14 +41,14 @@ const promoNow=async c=>(await q("select * from promotions where active and now(
 async function calc(c,items,district,lock){
  const promo=await promoNow(c),s=await site(c);let subtotal=0,discount=0,lines=[];
  for(const it of items||[]){
-  const r=(await q(`select v.id,v.price,v.stock,v.size_ml,p.name,p.premium,p.image_url from variants v join products p on p.id=v.product_id where v.id=$1 and p.active ${lock?'for update of v':''}`,[it.variantId],c))[0];
+  const r=(await q(`select v.id,v.price,v.sale,v.stock,v.size_ml,p.name,p.premium,p.image_url from variants v join products p on p.id=v.product_id where v.id=$1 and p.active ${lock?'for update of v':''}`,[it.variantId],c))[0];
   const n=Math.max(1,parseInt(it.qty)||1);
   if(!r||r.stock<n)throw new Error('Out of stock: '+(r?r.name:'item'));
-  const off=promo&&(r.premium||!promo.premium_only)?Math.round(r.price*promo.discount_pct/100):0;
+  let u=r.sale>0?r.sale:r.price;if(promo&&(r.premium||!promo.premium_only))u=Math.min(u,r.price-Math.round(r.price*promo.discount_pct/100));const off=r.price-u;
   subtotal+=r.price*n;discount+=off*n;lines.push({variantId:r.id,name:r.name,size:r.size_ml,image:r.image_url,qty:n,price:r.price,off});
  }
- const delivery=!lines.length?0:/dhaka|ঢাকা/i.test(district||'')?s.delivery.dhaka:s.delivery.outside;
- return{lines,subtotal,discount,delivery,total:subtotal-discount+delivery,site:s};
+ const net=subtotal-discount,fr=+s.delivery.free||0,delivery=!lines.length||(fr>0&&net>=fr)?0:/dhaka|ঢাকা/i.test(district||'')?s.delivery.dhaka:s.delivery.outside;
+ return{lines,subtotal,discount,delivery,total:net+delivery,site:s};
 }
 const PQ=`select p.*,(select round(avg(r.rating),1)::float from reviews r where r.product_id=p.id and r.approved) rating,(select count(*)::int from reviews r where r.product_id=p.id and r.approved) rcount,coalesce(json_agg(v order by v.size_ml) filter(where v.id is not null),'[]') variants from products p left join variants v on v.product_id=p.id`;
 app.get('/api/store',h(async(_,res)=>res.json({now:new Date(),site:await site(pool),promo:await promoNow(pool)||null,products:await q(PQ+' where p.active group by p.id order by p.id')})));
@@ -78,17 +80,17 @@ A.get('/site',async(_,res)=>res.json(await site(pool)));
 A.put('/site',async(req,res)=>{await q("update settings set value=$1 where key='site'",[JSON.stringify(req.body)]);res.json({ok:1})});
 A.get('/products',async(_,res)=>res.json(await q(PQ+' group by p.id order by p.id')));
 async function saveP(id,b){const c=await pool.connect();try{await c.query('begin');
- const f=[b.name,b.gender,b.short_desc,b.notes,b.image_url,!!b.premium,!!b.featured,b.active!==false];
- if(id)await c.query('update products set name=$1,gender=$2,short_desc=$3,notes=$4,image_url=$5,premium=$6,featured=$7,active=$8 where id=$9',[...f,id]);
- else id=(await c.query('insert into products(name,gender,short_desc,notes,image_url,premium,featured,active,slug) values($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id',[...f,await uniqueSlug(b.name,0,c)])).rows[0].id;
+ const f=[b.name,b.gender,b.short_desc,b.notes,b.image_url,!!b.premium,!!b.featured,b.active!==false,b.description||'',!!b.best,!!b.is_new];
+ if(id)await c.query('update products set name=$1,gender=$2,short_desc=$3,notes=$4,image_url=$5,premium=$6,featured=$7,active=$8,description=$9,best=$10,is_new=$11 where id=$12',[...f,id]);
+ else id=(await c.query('insert into products(name,gender,short_desc,notes,image_url,premium,featured,active,description,best,is_new,slug) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) returning id',[...f,await uniqueSlug(b.name,0,c)])).rows[0].id;
  await c.query('delete from variants where product_id=$1',[id]);
- for(const v of b.variants||[])await c.query('insert into variants(product_id,size_ml,price,stock,sku) values($1,$2,$3,$4,$5)',[id,v.size_ml,v.price,v.stock,v.sku||null]);
+ for(const v of b.variants||[])await c.query('insert into variants(product_id,size_ml,price,stock,sku,sale) values($1,$2,$3,$4,$5,$6)',[id,v.size_ml,v.price,v.stock,v.sku||null,v.sale||0]);
  await c.query('commit')}catch(e){await c.query('rollback');throw e}finally{c.release()}}
 const wrap=f=>async(req,res)=>{try{await f(req);res.json({ok:1})}catch(e){res.status(400).json({error:e.message})}};
 A.post('/products',wrap(r=>saveP(0,r.body)));
 A.put('/products/:id',wrap(r=>saveP(+r.params.id,r.body)));
 A.delete('/products/:id',wrap(r=>q('delete from products where id=$1',[r.params.id])));
-A.post('/promo',wrap(async r=>{const b=r.body;await q('update promotions set active=false');await q('insert into promotions(title,discount_pct,premium_only,starts_at,ends_at,image_url,cta_text,active) values($1,$2,$3,$4,$5,$6,$7,$8)',[b.title,b.discount_pct,!!b.premium_only,b.starts_at,b.ends_at,b.image_url,b.cta_text,b.active!==false])}));
+A.post('/promo',wrap(async r=>{const b=r.body;await q('update promotions set active=false');await q('insert into promotions(title,discount_pct,premium_only,starts_at,ends_at,image_url,cta_text,active,body) values($1,$2,$3,$4,$5,$6,$7,$8,$9)',[b.title,b.discount_pct,!!b.premium_only,b.starts_at,b.ends_at,b.image_url,b.cta_text,b.active!==false,b.body||''])}));
 A.get('/orders',async(_,res)=>res.json(await q('select * from orders order by id desc limit 200')));
 A.patch('/orders/:id',wrap(r=>q('update orders set status=coalesce($1,status),payment_status=coalesce($2,payment_status) where id=$3',[r.body.status,r.body.payment_status,r.params.id])));
 A.get('/stats',async(_,res)=>{const[a]=await q("select count(*)::int orders,coalesce(sum(total) filter(where status<>'cancelled'),0)::int revenue,count(distinct customer->>'phone')::int customers,count(*) filter(where status='pending')::int pending from orders");res.json({...a,top:await q("select customer->>'name' name,customer->>'phone' phone,count(*)::int n,sum(total)::int spent from orders group by 1,2 order by spent desc limit 20")})});
@@ -112,5 +114,19 @@ async function ensure(){
  await q('alter table products add column if not exists slug text');
  for(const p of await q('select id,name from products where slug is null order by id'))await q('update products set slug=$1 where id=$2',[await uniqueSlug(p.name,p.id),p.id]);
  await q('create unique index if not exists products_slug_key on products(slug)');
+ await q('alter table products add column if not exists description text');
+ await q('alter table products add column if not exists best bool default false');
+ await q('alter table products add column if not exists is_new bool default false');
+ await q('alter table variants add column if not exists sale int default 0');
+ await q('alter table promotions add column if not exists body text');
+ // Fill in any new site-content keys the storefront needs (existing values are never overwritten)
+ const DEF={logo:'',bar:'Cash on delivery across Bangladesh · Free delivery over ৳5,000',tagline:'A Symphony in Every Scent',promo_ended:'',
+  hero:{cta1:'Shop Now',cta2:'Explore Collections',image:'',vtitle:'Experience Melody',vtext:'Every fragrance has a story. Discover yours.',autoplay:true},
+  values:'Craft|Every blend is tested and refined until it feels balanced.\nAuthenticity|Honest notes, honest prices, honest descriptions.\nCare|Careful packing and friendly support on every order.',
+  why:'Long-lasting eau de parfum · Gift-ready packaging · Delivery across Bangladesh · Easy returns on unopened bottles',
+  ship:'Delivery in 1–3 days inside Dhaka and 3–5 days elsewhere in Bangladesh.',ret:'Unopened bottles can be returned within 7 days of delivery. Contact us to arrange it.',
+  eta:'1–3 working days (Dhaka), 3–5 working days (other districts)',contact:{fb:'',ig:'',tt:'',yt:''},delivery:{free:5000}};
+ const md=(o,d)=>{let c=0;for(const k in d){if(o[k]===undefined){o[k]=d[k];c=1}else if(d[k]&&typeof d[k]=='object'&&o[k]&&typeof o[k]=='object')c|=md(o[k],d[k])}return c};
+ const cur=await site(pool);if(md(cur,DEF))await q("update settings set value=$1 where key='site'",[JSON.stringify(cur)]);
 }
 ensure().then(()=>app.listen(process.env.PORT||3000,()=>console.log('Melody running'))).catch(e=>{console.error('Startup failed:',e);process.exit(1)});
