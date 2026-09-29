@@ -17,8 +17,8 @@ function cdown() { let r = Math.max(0, Date.parse(S.promo.ends_at) - (Date.now()
 setInterval(() => { const e = $('[data-cd]'); if (!e) return; if (!pOn()) { S.promo = null; route(); return } e.outerHTML = cdown() }, 1000);
 function banner(compact) {
     const q = S.promo; if (!pOn()) return !compact && S.site.promo_ended ? `<p class="save">${esc(S.site.promo_ended)}</p>` : '';
-    // promo media: video (home page only) -> falls back to the image; the image is also the video poster
-    const hv = ((S.site.hero || {}).video) || '', pvu = q.video_url || hv, media = pvu && !compact ? `<video class="pv" src="${esc(pvu)}" ${q.image_url ? `poster="${esc(q.image_url)}"` : ''} autoplay muted loop playsinline preload="auto"></video>` : q.image_url ? `<img loading="lazy" src="${esc(q.image_url)}" alt="${esc(q.title)}">` : '';
+    // promo media: image only (no video in the discount box)
+    const media = q.image_url ? `<img loading="lazy" src="${esc(q.image_url)}" alt="${esc(q.title)}">` : '';
     return `<div class="promo ${media ? '' : 'noimg'}"><div class="t"><small>LIMITED TIME OFFER</small><div class="big">${q.discount_pct}% OFF</div><h2>${esc(q.title)}</h2>${q.body ? `<p>${esc(q.body)}</p>` : ''}${compact ? '' : cdown()}<a class="btn g" href="/shop?sale=1">${esc(q.cta_text || 'Shop the Collection')}</a></div>${media}</div>`
 }
 /* ---- blocks ---- */
@@ -35,7 +35,8 @@ const sec = (h, L) => L.length ? `<section class="w sec"><h2>${h}</h2>${grid(L)}
 const V = {
     home() {
         const s = S.site, h = s.hero || {}, best = S.products.filter(p => p.best || p.featured).slice(0, 4);
-        return `${s.logo ? `<div class="w" style="text-align:center;padding-top:28px"><img src="${esc(s.logo)}" alt="Melody — A Symphony in Every Scent" style="height:240px;width:auto;margin:auto"></div>` : ''}
+        return `${s.logo ? `<div class="w" style="text-align:center;padding-top:4px"><img src="${esc(s.logo)}" alt="Melody — A Symphony in Every Scent" style="height:240px;width:auto;margin:0 auto;display:block"></div>` : ''}
+${h.topvideo ? `<section class="w topvid"><video src="${esc(h.topvideo)}" autoplay muted loop playsinline preload="auto"></video></section>` : ''}
 <div class="heroband"><div class="w hero ${h.image ? '' : 'solo'}"><div><div class="tag">${esc(s.tagline)}</div><h1>${esc(h.title)}</h1><p>${esc(h.desc)}</p><p><a class="btn" href="/shop">${esc(h.cta1 || 'Shop Now')}</a> <a class="btn o" href="/collections">${esc(h.cta2 || 'Explore Collections')}</a></p></div>${h.image ? `<img src="${esc(h.image)}" alt="Melody eau de parfum">` : ''}</div></div>
 ${pOn() || s.promo_ended ? `<section class="w promo-sec">${banner()}</section>` : ''}
 <section class="w sec"><h2>Find your scent</h2>${colls()}</section>${sec('Best sellers', best)}${mv()}${vid()}${aboutBlock()}${sec('New arrivals', S.products.filter(p => p.is_new))}`
