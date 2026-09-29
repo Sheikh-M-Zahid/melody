@@ -1,41 +1,86 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Melody Admin</title><link rel="stylesheet" href="/style.css">
-<style>body{padding:20px}table{width:100%;border-collapse:collapse;background:#fff}td,th{padding:8px;border-bottom:1px solid #eee;font-size:13px;text-align:left}.box{background:#fff;padding:20px;border-radius:16px;margin:14px 0;max-width:760px}</style></head><body>
-<div id="app"></div><script>
-const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),H=()=>({'Content-Type':'application/json',Authorization:'Bearer '+sessionStorage.t});
-const api=(m,u,b)=>fetch('/api/admin'+u,{method:m,headers:H(),body:b&&JSON.stringify(b)}).then(r=>r.status==401?login():r.json());
-async function upload(inp){const f=new FormData();f.append('file',inp.files[0]);const r=await(await fetch('/api/admin/upload',{method:'POST',headers:{Authorization:'Bearer '+sessionStorage.t},body:f})).json();if(r.error||!r.url)return alert(r.error||'Upload failed');inp.previousElementSibling.value=r.url}
-const up=id=>`<input id="${id}"><input type="file" onchange="upload(this)">`;
-function login(){$('#app').innerHTML=`<div class="box"><h2>Melody Admin</h2><input id="e" placeholder="Email"><input id="p" type="password" placeholder="Password"><br><button onclick="doLogin()">Login</button></div>`}
-async function doLogin(){const r=await(await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('#e').value,password:$('#p').value})})).json();if(r.token){sessionStorage.t=r.token;tab('products')}else alert(r.error)}
-function tab(t){$('#app').innerHTML=`<div class="tabs">${['dashboard','products','orders','reviews','promo','content'].map(x=>`<button onclick="tab('${x}')">${x}</button>`).join('')}<button class="ghost" onclick="sessionStorage.clear();login()">Logout</button></div><div id="v"></div>`;views[t]()}
-const views={
-async dashboard(){const s=await api('GET','/stats');$('#v').innerHTML=`<div class="box"><h3>Sales overview</h3><p>Orders: <b>${s.orders}</b> · Pending: <b>${s.pending}</b> · Revenue: <b>৳${s.revenue}</b> · Customers: <b>${s.customers}</b></p></div><table><tr><th>Customer</th><th>Phone</th><th>Orders</th><th>Spent</th></tr>${s.top.map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.phone)}</td><td>${c.n}</td><td>৳${c.spent}</td></tr>`).join('')}</table>`},
-async products(){const ps=await api('GET','/products');window.PS=ps;$('#v').innerHTML=`<div class="box"><h3>Add / Edit product</h3><input id="id" type="hidden"><input id="pn" placeholder="Name"><select id="pg"><option>male</option><option>female</option><option>unisex</option></select><input id="ps" placeholder="Short description"><input id="pt" placeholder="Fragrance notes"><textarea id="pd" placeholder="Full description (shown on the product page)"></textarea>Image (auto-compressed to WebP):${up('pi')}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Melody Admin</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            padding: 20px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff
+        }
+
+        td,
+        th {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            text-align: left
+        }
+
+        .box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 16px;
+            margin: 14px 0;
+            max-width: 760px
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script>
+        const $ = s => document.querySelector(s), esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])), H = () => ({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + sessionStorage.t });
+        const api = (m, u, b) => fetch('/api/admin' + u, { method: m, headers: H(), body: b && JSON.stringify(b) }).then(r => r.status == 401 ? login() : r.json());
+        async function upload(inp) { const f = new FormData(); f.append('file', inp.files[0]); const r = await (await fetch('/api/admin/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + sessionStorage.t }, body: f })).json(); if (r.error || !r.url) return alert(r.error || 'Upload failed'); inp.previousElementSibling.value = r.url }
+        const up = id => `<input id="${id}"><input type="file" onchange="upload(this)">`;
+        function login() { $('#app').innerHTML = `<div class="box"><h2>Melody Admin</h2><input id="e" placeholder="Email"><input id="p" type="password" placeholder="Password"><br><button onclick="doLogin()">Login</button></div>` }
+        async function doLogin() { const r = await (await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: $('#e').value, password: $('#p').value }) })).json(); if (r.token) { sessionStorage.t = r.token; tab('products') } else alert(r.error) }
+        function tab(t) { $('#app').innerHTML = `<div class="tabs">${['dashboard', 'products', 'orders', 'reviews', 'promo', 'content'].map(x => `<button onclick="tab('${x}')">${x}</button>`).join('')}<button class="ghost" onclick="sessionStorage.clear();login()">Logout</button></div><div id="v"></div>`; views[t]() }
+        const views = {
+            async dashboard() { const s = await api('GET', '/stats'); $('#v').innerHTML = `<div class="box"><h3>Sales overview</h3><p>Orders: <b>${s.orders}</b> · Pending: <b>${s.pending}</b> · Revenue: <b>৳${s.revenue}</b> · Customers: <b>${s.customers}</b></p></div><table><tr><th>Customer</th><th>Phone</th><th>Orders</th><th>Spent</th></tr>${s.top.map(c => `<tr><td>${esc(c.name)}</td><td>${esc(c.phone)}</td><td>${c.n}</td><td>৳${c.spent}</td></tr>`).join('')}</table>` },
+            async products() {
+                const ps = await api('GET', '/products'); window.PS = ps; $('#v').innerHTML = `<div class="box"><h3>Add / Edit product</h3><input id="id" type="hidden"><input id="pn" placeholder="Name"><select id="pg"><option>male</option><option>female</option><option>unisex</option></select><input id="ps" placeholder="Short description"><input id="pt" placeholder="Fragrance notes"><textarea id="pd" placeholder="Full description (shown on the product page)"></textarea>Image (auto-compressed to WebP):${up('pi')}
 <textarea id="pv" placeholder="Variants, one per line: size_ml,price,stock,sale_price(optional)  e.g. 50,2500,20  or  50,2500,20,2000"></textarea><label><input type="checkbox" id="pp" style="width:auto"> Premium</label> <label><input type="checkbox" id="pf" style="width:auto"> Featured</label> <label><input type="checkbox" id="pbs" style="width:auto"> Best seller</label> <label><input type="checkbox" id="pnw" style="width:auto"> New arrival</label><br><button onclick="saveP()">Save</button></div>
-<table><tr><th>Name</th><th>Type</th><th>Variants</th><th></th></tr>${ps.map(p=>`<tr><td>${p.name}</td><td>${p.gender}</td><td>${p.variants.map(v=>v.size_ml+'ml ৳'+(v.sale>0?v.sale+' (was '+v.price+')':v.price)+' ('+v.stock+')').join(', ')}</td><td><a href="#" onclick="editP(${p.id});return false">Edit</a> · <a href="#" onclick="delP(${p.id});return false">Delete</a></td></tr>`).join('')}</table>`},
-async orders(){const o=await api('GET','/orders'),S=['pending','confirmed','processing','shipped','delivered','cancelled'];$('#v').innerHTML=`<table><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th></tr>${o.map(x=>`<tr><td>${x.order_no}<br>${new Date(x.created_at).toLocaleString()}</td><td>${esc(x.customer.name)}<br>${esc(x.customer.phone)}<br>${esc(x.customer.address)}, ${esc(x.customer.district)}</td><td>${x.items.map(i=>`<img src="${esc(i.image)}" width="34" onerror="this.remove()"> ${esc(i.name)} ${i.size}ml ×${i.qty}`).join('<br>')}</td><td>৳${x.total}<br>−৳${x.discount}</td><td>${esc(x.payment_method)} ${esc(x.trx_id)}<br><select onchange="api('PATCH','/orders/${x.id}',{payment_status:this.value})">${['unpaid','paid'].map(s=>`<option ${s==x.payment_status?'selected':''}>${s}</option>`)}</select></td><td><select onchange="api('PATCH','/orders/${x.id}',{status:this.value})">${S.map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`)}</select></td></tr>`).join('')}</table>`},
-async reviews(){const r=await api('GET','/reviews');$('#v').innerHTML=`<table><tr><th>Product</th><th>Reviewer</th><th>Rating</th><th>Comment</th><th>Status</th><th></th></tr>${r.map(x=>`<tr><td>${esc(x.product)}</td><td>${esc(x.name)}<br>${new Date(x.created_at).toLocaleDateString()}</td><td>${'★'.repeat(x.rating)}</td><td>${esc(x.comment)}</td><td>${x.approved?'Approved':'<b>Pending</b>'}</td><td>${x.approved?`<a href="#" onclick="rv(${x.id},false);return false">Hide</a>`:`<a href="#" onclick="rv(${x.id},true);return false">Approve</a>`} · <a href="#" onclick="rv(${x.id});return false">Delete</a></td></tr>`).join('')||'<tr><td colspan="6">No reviews yet</td></tr>'}</table>`},
-promo(){$('#v').innerHTML=`<div class="box"><h3>New campaign (replaces the current one)</h3><input id="t" placeholder="Title"><input id="d" type="number" placeholder="Discount %" value="40"><label>Start</label><input id="s" type="datetime-local"><label>End</label><input id="en" type="datetime-local">Image:${up('im')}<input id="c" value="Shop the Collection"><label>Promo text (optional)</label><textarea id="pb2" placeholder="Short line shown in the promo banner"></textarea><label><input type="checkbox" id="po" checked style="width:auto"> Premium products only</label><br><button onclick="savePromo()">Activate</button></div>`},
-async content(){const s=await api('GET','/site');window.SITE=s;
-// [key, label, kind]  kind: 1 = image/video upload, 2 = long text
-const F=[['logo','Logo image',1],['bar','Announcement bar text'],['tagline','Tagline'],
-['hero.title','Hero title'],['hero.desc','Hero text',2],['hero.cta1','Hero button 1 text'],['hero.cta2','Hero button 2 text'],['hero.image','Hero image',1],
-['hero.video','Promo video (upload or paste mp4 link)',1],['hero.poster','Video poster image',1],['hero.vtitle','Video section title'],['hero.vtext','Video section text'],['hero.autoplay','Video autoplay (true/false)'],
-['promo_ended','Message shown after a campaign ends',2],
-['mission','Mission',2],['vision','Vision',2],['about','About / Our story',2],['values','Values (one per line: Title|text)',2],['why','Why choose Melody (separate with ·)',2],
-['ship','Shipping info',2],['ret','Return policy',2],['eta','Estimated delivery text'],
-['contact.phone','Phone'],['contact.email','Email'],['contact.address','Address'],['contact.fb','Facebook link'],['contact.ig','Instagram link'],['contact.tt','TikTok link'],['contact.yt','YouTube link'],
-['delivery.dhaka','Delivery Dhaka ৳'],['delivery.outside','Delivery outside ৳'],['delivery.free','Free delivery over ৳ (0 = off)'],
-...['cod','bkash','nagad','rocket','bank'].flatMap(k=>[[`payments.${k}.on`,k+' enabled (true/false)'],[`payments.${k}.number`,k+' number'],[`payments.${k}.note`,k+' instructions',2]])];
-const id=k=>'f_'+k;
-$('#v').innerHTML=`<div class="box">${F.map(([k,l,t])=>`<label>${l}</label>${t==1?up(id(k)):t==2?`<textarea id="${id(k)}" rows="3"></textarea>`:`<input id="${id(k)}">`}`).join('')}<button onclick="saveSite()">Save</button></div>`;
-F.forEach(([k])=>{const el=document.getElementById(id(k));if(el)el.value=k.split('.').reduce((o,x)=>o&&o[x],s)??''});window.F=F}};
-const setp=(o,k,v)=>{const a=k.split('.');a.slice(0,-1).forEach(x=>o=o[x]=o[x]||{});const l=a[a.length-1];o[l]=v==='true'?true:v==='false'?false:(l=='dhaka'||l=='outside'||l=='free')?+v:v};
-async function saveSite(){window.F.forEach(([k])=>setp(SITE,k,document.getElementById('f_'+k).value));await api('PUT','/site',SITE);alert('Saved')}
-async function saveP(){const b={name:$('#pn').value,gender:$('#pg').value,short_desc:$('#ps').value,notes:$('#pt').value,image_url:$('#pi').value,description:$('#pd').value,premium:$('#pp').checked,featured:$('#pf').checked,best:$('#pbs').checked,is_new:$('#pnw').checked,variants:$('#pv').value.split('\n').filter(Boolean).map(l=>{const[a,p,s,sl]=l.split(',').map(Number);return{size_ml:a,price:p,stock:s||0,sale:sl||0}})};const id=$('#id').value;const r=await api(id?'PUT':'POST','/products'+(id?'/'+id:''),b);if(r.error)alert(r.error);tab('products')}
-function editP(id){const p=PS.find(p=>p.id==id);$('#id').value=id;$('#pn').value=p.name;$('#pg').value=p.gender;$('#ps').value=p.short_desc||'';$('#pt').value=p.notes||'';$('#pd').value=p.description||'';$('#pbs').checked=!!p.best;$('#pnw').checked=!!p.is_new;$('#pi').value=p.image_url||'';$('#pp').checked=p.premium;$('#pf').checked=p.featured;$('#pv').value=p.variants.map(v=>[v.size_ml,v.price,v.stock,...(v.sale>0?[v.sale]:[])].join(',')).join('\n');scrollTo(0,0)}
-async function delP(id){if(confirm('Delete?')){await api('DELETE','/products/'+id);tab('products')}}
-async function savePromo(){const r=await api('POST','/promo',{title:$('#t').value,discount_pct:+$('#d').value,starts_at:new Date($('#s').value).toISOString(),ends_at:new Date($('#en').value).toISOString(),image_url:$('#im').value,cta_text:$('#c').value,body:$('#pb2').value,premium_only:$('#po').checked});alert(r.error||'Campaign live')}
-async function rv(id,ok){if(ok===undefined){if(!confirm('Delete this review?'))return;await api('DELETE','/reviews/'+id)}else await api('PATCH','/reviews/'+id,{approved:ok});tab('reviews')}
-sessionStorage.t?tab('products'):login();
-</script></body></html>
+<table><tr><th>Name</th><th>Type</th><th>Variants</th><th></th></tr>${ps.map(p => `<tr><td>${p.name}</td><td>${p.gender}</td><td>${p.variants.map(v => v.size_ml + 'ml ৳' + (v.sale > 0 ? v.sale + ' (was ' + v.price + ')' : v.price) + ' (' + v.stock + ')').join(', ')}</td><td><a href="#" onclick="editP(${p.id});return false">Edit</a> · <a href="#" onclick="delP(${p.id});return false">Delete</a></td></tr>`).join('')}</table>`
+            },
+            async orders() { const o = await api('GET', '/orders'), S = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']; $('#v').innerHTML = `<table><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th></tr>${o.map(x => `<tr><td>${x.order_no}<br>${new Date(x.created_at).toLocaleString()}</td><td>${esc(x.customer.name)}<br>${esc(x.customer.phone)}<br>${esc(x.customer.address)}, ${esc(x.customer.district)}</td><td>${x.items.map(i => `<img src="${esc(i.image)}" width="34" onerror="this.remove()"> ${esc(i.name)} ${i.size}ml ×${i.qty}`).join('<br>')}</td><td>৳${x.total}<br>−৳${x.discount}</td><td>${esc(x.payment_method)} ${esc(x.trx_id)}<br><select onchange="api('PATCH','/orders/${x.id}',{payment_status:this.value})">${['unpaid', 'paid'].map(s => `<option ${s == x.payment_status ? 'selected' : ''}>${s}</option>`)}</select></td><td><select onchange="api('PATCH','/orders/${x.id}',{status:this.value})">${S.map(s => `<option ${s == x.status ? 'selected' : ''}>${s}</option>`)}</select></td></tr>`).join('')}</table>` },
+            async reviews() { const r = await api('GET', '/reviews'); $('#v').innerHTML = `<table><tr><th>Product</th><th>Reviewer</th><th>Rating</th><th>Comment</th><th>Status</th><th></th></tr>${r.map(x => `<tr><td>${esc(x.product)}</td><td>${esc(x.name)}<br>${new Date(x.created_at).toLocaleDateString()}</td><td>${'★'.repeat(x.rating)}</td><td>${esc(x.comment)}</td><td>${x.approved ? 'Approved' : '<b>Pending</b>'}</td><td>${x.approved ? `<a href="#" onclick="rv(${x.id},false);return false">Hide</a>` : `<a href="#" onclick="rv(${x.id},true);return false">Approve</a>`} · <a href="#" onclick="rv(${x.id});return false">Delete</a></td></tr>`).join('') || '<tr><td colspan="6">No reviews yet</td></tr>'}</table>` },
+            promo() { $('#v').innerHTML = `<div class="box"><h3>New campaign (replaces the current one)</h3><input id="t" placeholder="Title"><input id="d" type="number" placeholder="Discount %" value="40"><label>Start</label><input id="s" type="datetime-local"><label>End</label><input id="en" type="datetime-local">Image (also used as the video poster):${up('im')}Promo video (mp4 — plays in the banner instead of the image):${up('pvid')}<input id="c" value="Shop the Collection"><label>Promo text (optional)</label><textarea id="pb2" placeholder="Short line shown in the promo banner"></textarea><label><input type="checkbox" id="po" checked style="width:auto"> Premium products only</label><br><button onclick="savePromo()">Activate</button></div>` },
+            async content() {
+                const s = await api('GET', '/site'); window.SITE = s;
+                // [key, label, kind]  kind: 1 = image/video upload, 2 = long text
+                const F = [['logo', 'Logo image', 1], ['bar', 'Announcement bar text'], ['tagline', 'Tagline'],
+                ['hero.title', 'Hero title'], ['hero.desc', 'Hero text', 2], ['hero.cta1', 'Hero button 1 text'], ['hero.cta2', 'Hero button 2 text'], ['hero.image', 'Hero image', 1],
+                ['hero.video', 'Promo video (upload or paste mp4 link)', 1], ['hero.poster', 'Video poster image', 1], ['hero.vtitle', 'Video section title'], ['hero.vtext', 'Video section text'], ['hero.autoplay', 'Video autoplay (true/false)'],
+                ['promo_ended', 'Message shown after a campaign ends', 2],
+                ['mission', 'Mission', 2], ['vision', 'Vision', 2], ['about', 'About / Our story', 2], ['values', 'Values (one per line: Title|text)', 2], ['why', 'Why choose Melody (separate with ·)', 2],
+                ['ship', 'Shipping info', 2], ['ret', 'Return policy', 2], ['eta', 'Estimated delivery text'],
+                ['contact.phone', 'Phone'], ['contact.email', 'Email'], ['contact.address', 'Address'], ['contact.fb', 'Facebook link'], ['contact.ig', 'Instagram link'], ['contact.tt', 'TikTok link'], ['contact.yt', 'YouTube link'],
+                ['delivery.dhaka', 'Delivery Dhaka ৳'], ['delivery.outside', 'Delivery outside ৳'], ['delivery.free', 'Free delivery over ৳ (0 = off)'],
+                ...['cod', 'bkash', 'nagad', 'rocket', 'bank'].flatMap(k => [[`payments.${k}.on`, k + ' enabled (true/false)'], [`payments.${k}.number`, k + ' number'], [`payments.${k}.note`, k + ' instructions', 2]])];
+                const id = k => 'f_' + k;
+                $('#v').innerHTML = `<div class="box">${F.map(([k, l, t]) => `<label>${l}</label>${t == 1 ? up(id(k)) : t == 2 ? `<textarea id="${id(k)}" rows="3"></textarea>` : `<input id="${id(k)}">`}`).join('')}<button onclick="saveSite()">Save</button></div>`;
+                F.forEach(([k]) => { const el = document.getElementById(id(k)); if (el) el.value = k.split('.').reduce((o, x) => o && o[x], s) ?? '' }); window.F = F
+            }
+        };
+        const setp = (o, k, v) => { const a = k.split('.'); a.slice(0, -1).forEach(x => o = o[x] = o[x] || {}); const l = a[a.length - 1]; o[l] = v === 'true' ? true : v === 'false' ? false : (l == 'dhaka' || l == 'outside' || l == 'free') ? +v : v };
+        async function saveSite() { window.F.forEach(([k]) => setp(SITE, k, document.getElementById('f_' + k).value)); await api('PUT', '/site', SITE); alert('Saved') }
+        async function saveP() { const b = { name: $('#pn').value, gender: $('#pg').value, short_desc: $('#ps').value, notes: $('#pt').value, image_url: $('#pi').value, description: $('#pd').value, premium: $('#pp').checked, featured: $('#pf').checked, best: $('#pbs').checked, is_new: $('#pnw').checked, variants: $('#pv').value.split('\n').filter(Boolean).map(l => { const [a, p, s, sl] = l.split(',').map(Number); return { size_ml: a, price: p, stock: s || 0, sale: sl || 0 } }) }; const id = $('#id').value; const r = await api(id ? 'PUT' : 'POST', '/products' + (id ? '/' + id : ''), b); if (r.error) alert(r.error); tab('products') }
+        function editP(id) { const p = PS.find(p => p.id == id); $('#id').value = id; $('#pn').value = p.name; $('#pg').value = p.gender; $('#ps').value = p.short_desc || ''; $('#pt').value = p.notes || ''; $('#pd').value = p.description || ''; $('#pbs').checked = !!p.best; $('#pnw').checked = !!p.is_new; $('#pi').value = p.image_url || ''; $('#pp').checked = p.premium; $('#pf').checked = p.featured; $('#pv').value = p.variants.map(v => [v.size_ml, v.price, v.stock, ...(v.sale > 0 ? [v.sale] : [])].join(',')).join('\n'); scrollTo(0, 0) }
+        async function delP(id) { if (confirm('Delete?')) { await api('DELETE', '/products/' + id); tab('products') } }
+        async function savePromo() { const r = await api('POST', '/promo', { title: $('#t').value, discount_pct: +$('#d').value, starts_at: new Date($('#s').value).toISOString(), ends_at: new Date($('#en').value).toISOString(), image_url: $('#im').value, video_url: $('#pvid').value, cta_text: $('#c').value, body: $('#pb2').value, premium_only: $('#po').checked }); alert(r.error || 'Campaign live') }
+        async function rv(id, ok) { if (ok === undefined) { if (!confirm('Delete this review?')) return; await api('DELETE', '/reviews/' + id) } else await api('PATCH', '/reviews/' + id, { approved: ok }); tab('reviews') }
+        sessionStorage.t ? tab('products') : login();
+    </script>
+</body>
+
+</html>
