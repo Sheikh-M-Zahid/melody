@@ -31,7 +31,7 @@ app.get('/collections/:k',(req,res)=>CT[req.params.k]?page(req,res,{title:CT[req
 app.get('/robots.txt',(req,res)=>res.type('text').send(`User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /api/admin\nSitemap: ${B(req)}/sitemap.xml\n`));
 app.get('/sitemap.xml',h(async(req,res)=>{const b=B(req),ps=await q('select slug from products where active and slug is not null order by id'),u=['/','/shop','/about','/contact','/collections',...Object.keys(CT).filter(k=>k!='on-sale').map(k=>'/collections/'+k),...ps.map(p=>'/p/'+p.slug)];
  res.type('xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${u.map(x=>`<url><loc>${esc(b+x)}</loc></url>`).join('')}</urlset>`)}));
-app.use('/uploads',express.static(UP,{maxAge:'30d',immutable:true}));app.use(express.static(PUB,{maxAge:'1h'}));
+app.use('/uploads',express.static(UP,{maxAge:'30d',immutable:true}));app.use(express.static(PUB,{maxAge:0}));
 const up=multer({storage:multer.diskStorage({destination:UP,filename:(_,f,cb)=>cb(null,Date.now()+path.extname(f.originalname))}),limits:{fileSize:300e6}});
 const same=(a='',b='')=>{a=Buffer.from(a);b=Buffer.from(b);return a.length===b.length&&crypto.timingSafeEqual(a,b)};
 const auth=(req,res,next)=>{try{jwt.verify((req.headers.authorization||'').slice(7),process.env.JWT_SECRET);next()}catch{res.sendStatus(401)}};
