@@ -18,7 +18,7 @@ setInterval(() => { const e = $('[data-cd]'); if (!e) return; if (!pOn()) { S.pr
 function banner(compact) {
     const q = S.promo; if (!pOn()) return !compact && S.site.promo_ended ? `<p class="save">${esc(S.site.promo_ended)}</p>` : '';
     // promo media: video (home page only) -> falls back to the image; the image is also the video poster
-    const media = q.video_url && !compact ? `<video class="pv" src="${esc(q.video_url)}" ${q.image_url ? `poster="${esc(q.image_url)}"` : ''} autoplay muted loop playsinline preload="auto"></video>` : q.image_url ? `<img loading="lazy" src="${esc(q.image_url)}" alt="${esc(q.title)}">` : '';
+    const hv = ((S.site.hero || {}).video) || '', pvu = q.video_url || hv, media = pvu && !compact ? `<video class="pv" src="${esc(pvu)}" ${q.image_url ? `poster="${esc(q.image_url)}"` : ''} autoplay muted loop playsinline preload="auto"></video>` : q.image_url ? `<img loading="lazy" src="${esc(q.image_url)}" alt="${esc(q.title)}">` : '';
     return `<div class="promo ${media ? '' : 'noimg'}"><div class="t"><small>LIMITED TIME OFFER</small><div class="big">${q.discount_pct}% OFF</div><h2>${esc(q.title)}</h2>${q.body ? `<p>${esc(q.body)}</p>` : ''}${compact ? '' : cdown()}<a class="btn g" href="/shop?sale=1">${esc(q.cta_text || 'Shop the Collection')}</a></div>${media}</div>`
 }
 /* ---- blocks ---- */
